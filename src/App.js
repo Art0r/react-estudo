@@ -1,32 +1,61 @@
 import './App.css';
-import React, { useCallback, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import P from 'prop-types';
 
-const Button = ({ incrementButton }) => {
+const Post = ({ post, handleClick }) => {
   console.log('Filho renderizou');
-  return <button onClick={() => incrementButton(10)}>+</button>;
+  return (
+    <div key={post.id} className="post">
+      <h1 onClick={() => handleClick(post.title)}>{post.title}</h1>
+      <p>{post.body}</p>
+    </div>
+  );
 };
 
-Button.propTypes = {
-  incrementButton: P.func,
+Post.propTypes = {
+  post: P.shape({
+    id: P.number,
+    title: P.string,
+    body: P.string,
+  }),
+  handleClick: P.func,
 };
 
 function App() {
-  const [counter, setCounter] = useState(0);
+  const [posts, setPosts] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const input = useRef(null);
 
-  const incrementCounter = useCallback((num) => {
-    setCounter((counter) => counter + num);
+  const handleClick = (value) => {
+    setInputValue(value);
+  };
+
+  useEffect(() => {
+    input.current.focus();
+  }, [inputValue]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetch('https://jsonplaceholder.typicode.com/posts')
+        .then((r) => r.json())
+        .then((r) => setPosts(r));
+    }, 2500);
   }, []);
 
-  const btn = useMemo(() => <Button incrementButton={incrementCounter} />, [incrementCounter]);
   console.log('Pai renderizou');
-
   return (
     <div className="App">
-      <p>Teste</p>
-      <h1>C1: {counter}</h1>
-      {btn}
+      <p>
+        <input ref={input} type="search" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+      </p>
+      {useMemo(
+        () => posts.length > 0 && posts.map((post) => <Post key={post.id} post={post} handleClick={handleClick} />),
+        [posts],
+      )}
+
+      {posts.length <= 0 && <p>Corregando posts</p>}
     </div>
   );
 }
+
 export default App;
